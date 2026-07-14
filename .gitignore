@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environnement virtuel
+venv/
+.env
+
+# Notebook
+.ipynb_checkpoints/
+
+# Données
+data/raw/
+data/processed/
+
+# MLflow
+mlruns/
+
+# Airflow
+airflow/logs/
+
+# VSCode
+.vscode/
+
+# Docker
+*.log
