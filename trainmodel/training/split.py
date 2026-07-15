@@ -24,7 +24,12 @@ def temporal_split(
         .sort_values()
     )
 
+    print("Dernière date train :")
+    print(dates.iloc[split_point-1])
 
+
+    print("\nPremière date test :")
+    print(dates.iloc[split_point])
     train_dates = dates.iloc[:split_point]
 
     test_dates = dates.iloc[split_point:]
