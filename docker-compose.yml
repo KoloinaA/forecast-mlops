@@ -2,42 +2,48 @@ services:
 
   postgres:
     image: postgres:16
-
     container_name: postgres
-
     restart: always
-
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: forecast_db
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   python:
-
     build:
-
       context: .
-
       dockerfile: docker/Dockerfile.python
-
     container_name: python-app
-
     depends_on:
       - postgres
-
+      - mlflow # Optionnel mais recommandé : s'assurer que mlflow est lancé
     volumes:
       - .:/app
-
+      # ON MONTE LE MÊME VOLUME D'ARTEFACTS ICI
+      - mlflow_artifacts:/mlflow/mlruns
     working_dir: /app
-
     tty: true
+  
+  mlflow:
+    image: python:3.12-slim
+    container_name: mlflow
+    depends_on:
+      - postgres
+    working_dir: /mlflow
+    volumes:
+      - mlflow_data:/mlflow
+      - mlflow_artifacts:/mlflow/mlruns
+    command: >
+      bash -c "pip install setuptools==69.5.1 && pip install mlflow==2.15.1 psycopg2-binary && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/mlruns"
+    ports:
+      - "5000:5000"
 
 volumes:
-
   postgres_data:
+  mlflow_data:
+  # ÉTAPE CLÉ : Déclaration du volume partagé pour les artefacts
+  mlflow_artifacts:

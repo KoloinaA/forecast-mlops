@@ -1,13 +1,33 @@
 from trainmodel.training.loader import load_training_data
 from trainmodel.training.split import temporal_split
+
 from trainmodel.training.preprocessing_model import create_preprocessor
+
 from trainmodel.training.models import get_models
-from trainmodel.training.trainer import train_model
+
+from trainmodel.training.trainer import (
+    train_model,
+    create_training_pipeline
+)
+
 from trainmodel.training.evaluator import evaluate_model
+
+from trainmodel.training.mlflow_logger import (
+    setup_mlflow,
+    start_run,
+    log_metrics,
+    log_model,
+    log_params
+)
 
 
 
 def training_pipeline():
+
+
+    print("Initialisation MLflow...")
+
+    setup_mlflow()
 
 
     print("Chargement des données...")
@@ -22,24 +42,13 @@ def training_pipeline():
 
 
 
-    print("Préprocessing...")
+    print("Création du préprocesseur...")
 
     preprocessor = create_preprocessor()
 
 
-    X_train_ready = preprocessor.fit_transform(
-        X_train
-    )
-
-    X_test_ready = preprocessor.transform(
-        X_test
-    )
-
-
 
     models = get_models()
-
-
 
     results = {}
 
@@ -51,21 +60,53 @@ def training_pipeline():
         print(f"Entraînement : {name}")
 
 
-        trained_model = train_model(
-            model,
-            X_train_ready,
-            y_train
-        )
+        with start_run(name):
 
 
-        metrics = evaluate_model(
-            trained_model,
-            X_test_ready,
-            y_test
-        )
+            pipeline_model = create_training_pipeline(
+                preprocessor,
+                model
+            )
 
 
-        results[name] = metrics
+            trained_model = train_model(
+                pipeline_model,
+                X_train,
+                y_train
+            )
+
+
+            metrics = evaluate_model(
+                trained_model,
+                X_test,
+                y_test
+            )
+
+
+            print(metrics)
+
+
+            # Enregistrement MLflow
+
+            log_metrics(metrics)
+
+
+            log_params(
+                model
+            )
+
+
+            log_model(
+                trained_model,
+                X_test.head(5),
+            )
+
+
+            results[name] = metrics
+
+
+
+        
 
 
 
@@ -74,6 +115,7 @@ def training_pipeline():
 
 
 if __name__ == "__main__":
+
 
     results = training_pipeline()
 
